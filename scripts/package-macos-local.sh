@@ -26,6 +26,6 @@ codesign --force --sign - "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 python3 "$root_dir/scripts/check-macos-bundle.py" "$app"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$output_dir/limusic-monterey-intel.zip"
-shasum -a 256 "$output_dir/limusic-monterey-intel.zip" > "$output_dir/SHA256SUMS"
+(cd "$output_dir" && shasum -a 256 limusic-monterey-intel.zip > SHA256SUMS)
 echo "Packaged: $app"
 echo "Archive: $output_dir/limusic-monterey-intel.zip"

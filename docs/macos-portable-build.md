@@ -42,3 +42,10 @@ required third-party notices and corresponding sources/build instructions for
 bundled GPL/LGPL dependencies as well as LiMusic. A library inventory and the
 LiMusic license are included in this local bundle; they are not a complete
 third-party license/source distribution package.
+
+Local validation on Intel Monterey 12.7.6:
+- 106 bundled dylibs plus the main executable passed dependency and Intel checks.
+- All bundled dylibs declare a macOS 12.0 minimum.
+- A standalone loader initialized bundled libmpv with `/opt/local` reads denied.
+- Ad-hoc signatures and all dependency paths passed again after ZIP extraction.
+- The ZIP's relative SHA-256 checksum file passed verification.
