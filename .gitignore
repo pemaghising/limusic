@@ -31,3 +31,6 @@ rustypipe_reports/
 /plans
 scripts/bench.sh
 scripts/triage.py
+
+# Finder metadata
+.DS_Store

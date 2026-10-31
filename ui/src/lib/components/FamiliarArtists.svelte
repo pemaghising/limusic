@@ -1,12 +1,8 @@
 <script lang="ts">
 	// The artists you actually play, ranked by the plays the stats page counts (#497).
 	//
-	// What makes this section worth a slot is the one number no YouTube shelf has, your own play
-	// count, so every artist carries it. It has been a flower of floating avatars, then a poster for
-	// #1 beside rows whose backgrounds filled in proportion to their plays; those fills read as five
-	// boxes of different widths (#319). Now it is six posters in rank order, the same frame the feed
-	// uses for an artist (PortraitCard), with the rank and the count set on the photograph: the order
-	// carries the ranking, the count carries the "yours".
+	// Keep the six ranked artists in a compact, horizontally scrollable row. Fixed card widths
+	// prevent a short list from expanding into oversized posters or multiple rows.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { HugeiconsIcon } from '@hugeicons/svelte';
@@ -25,7 +21,7 @@
 	// ponytail: one browse call per artist, because the subscriber count and the subscribe state
 	// only exist on the artist page. Six of them, shared with the artist route's cache (same key),
 	// fired once per mount. Cut the count before reaching for a batch endpoint that doesn't exist.
-	const COUNT = 6; // one row of posters at full width, whole rows of two or three narrower
+	const COUNT = 6; // one compact row; narrower windows scroll horizontally
 	const MIN = 3; // fewer familiar artists than this and the section isn't worth a slot
 	const SLACK = 2; // extra ids fetched, to backfill the ones whose page comes back unparseable
 	// ponytail: artists without a channel (local files, unlinked credits) are dropped after the
@@ -162,16 +158,16 @@
 {/snippet}
 
 {#if loading ? ids.length >= MIN : artists.length >= MIN}
-	<section>
+	<section class="min-w-0">
 		<SectionHeading title={t('home.familiar_artists')} icon={UserStar01Icon} />
-		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+		<div class="flex gap-3 overflow-x-auto pb-2">
 			{#if loading}
 				{#each Array(Math.min(ids.length, COUNT)) as _, i (i)}
-					<Skeleton class="aspect-[4/5] w-full rounded-2xl" />
+					<Skeleton class="aspect-[4/5] w-28 shrink-0 rounded-2xl sm:w-32" />
 				{/each}
 			{:else}
 				{#each artists as a, i (a.channelId)}
-					<div class="group relative aspect-[4/5] w-full" data-ctx>
+					<div class="group relative aspect-[4/5] w-28 shrink-0 sm:w-32" data-ctx>
 						<div
 							class="relative h-full w-full cursor-pointer overflow-hidden rounded-2xl bg-muted"
 							role="button"
@@ -194,12 +190,12 @@
 							<div
 								class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"
 							></div>
-							<div class="pointer-events-none absolute inset-x-0 bottom-0 p-3.5">
+							<div class="pointer-events-none absolute inset-x-0 bottom-0 p-2.5">
 								<div class="font-heading text-xs font-semibold tracking-widest text-primary">
 									{rank(i)}
 								</div>
 								<div
-									class="mt-0.5 line-clamp-2 font-heading text-base font-bold leading-tight text-white"
+									class="mt-0.5 line-clamp-2 font-heading text-sm font-bold leading-tight text-white"
 								>
 									{a.name ?? t('common.unknown_artist')}
 								</div>
