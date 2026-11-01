@@ -49,3 +49,28 @@ Local validation on Intel Monterey 12.7.6:
 - A standalone loader initialized bundled libmpv with `/opt/local` reads denied.
 - Ad-hoc signatures and all dependency paths passed again after ZIP extraction.
 - The ZIP's relative SHA-256 checksum file passed verification.
+
+## Playback probe with MacPorts inaccessible
+
+`scripts/check-macos-mpv.c` loads the explicitly supplied bundled libmpv using
+`dlopen`, without linking to a system/MacPorts libmpv. Compile with mpv headers,
+then run in a temporary app copy so its `@executable_path` library references
+resolve inside that copy. Never add test executables to the signed release app.
+For example, after copying the app into `target/macports-free-test/limusic.app`:
+
+```sh
+clang -Wall -Wextra -I/opt/local/include scripts/check-macos-mpv.c \
+  -o target/macports-free-test/limusic.app/Contents/MacOS/check-macos-mpv
+sandbox-exec -p '(version 1)(allow default)(deny file-read* (subpath "/opt/local"))' \
+  /usr/bin/env DYLD_PRINT_LIBRARIES=1 \
+  target/macports-free-test/limusic.app/Contents/MacOS/check-macos-mpv \
+  "$PWD/target/macports-free-test/limusic.app/Contents/Frameworks/libmpv.2.dylib" \
+  /path/to/sample.wav /path/to/sample.m4a https://www.w3schools.com/html/horse.mp3
+```
+
+MacPorts headers are used only to compile the probe; MacPorts is inaccessible to
+the runtime test. The probe uses muted CoreAudio and checks load, pause/resume,
+seek, advancing playback and EOF. WAV, AAC/M4A and HTTPS MP3 passed on this Mac,
+as did the WebKit theme probe under the same sandbox. Loader tracing showed no
+MacPorts libraries. This is stronger than a link-path check, but still does not
+replace full application tests on a clean Mac. No app binary changes were needed.
