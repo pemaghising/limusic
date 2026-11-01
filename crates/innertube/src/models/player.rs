@@ -226,6 +226,9 @@ pub enum AudioQuality {
     Low,
     /// Desktop has no metered-network concept → treat AUTO as "prefer HIGH" (context/12).
     Auto,
+    /// Offline downloads: the best AAC (`mp4a`) stream, so the saved file is a standard,
+    /// taggable `.m4a` without re-encoding. Falls back to HIGH when no AAC stream is listed.
+    Aac,
 }
 
 /// Pick the best audio format for the requested quality. Port of `YTPlayerUtils.findFormat`,
@@ -245,6 +248,16 @@ pub fn find_format(data: &StreamingData, quality: AudioQuality) -> Option<&Forma
     let original: Vec<&Format> = audio.iter().copied().filter(|f| f.is_original()).collect();
     let audio = if original.is_empty() { audio } else { original };
     match quality {
+        AudioQuality::Aac => {
+            let aac =
+                audio.iter().copied().filter(|f| f.mime_type.contains("mp4a")).max_by(|a, b| {
+                    a.audio_channels
+                        .unwrap_or(2)
+                        .cmp(&b.audio_channels.unwrap_or(2))
+                        .then(a.bitrate.cmp(&b.bitrate))
+                });
+            aac.or_else(|| find_format(data, AudioQuality::High))
+        }
         AudioQuality::High | AudioQuality::Auto => audio.into_iter().max_by(|a, b| {
             a.quality_rank()
                 .cmp(&b.quality_rank())
@@ -360,6 +373,31 @@ mod tests {
         assert_eq!(sd.expires_in_seconds, Some(21540));
         assert_eq!(sd.adaptive_formats[0].bitrate, 141210);
         assert!(find_format(&sd, AudioQuality::High).is_some());
+    }
+
+    /// Downloads ask for AAC so the file is a taggable .m4a, even when Opus would win for
+    /// playback; with no AAC listed they still get the best stream rather than nothing.
+    #[test]
+    fn find_format_aac_prefers_mp4a_then_falls_back() {
+        let json = r#"{
+            "playabilityStatus": { "status": "OK" },
+            "streamingData": { "adaptiveFormats": [
+                { "itag": 251, "url": "opus", "mimeType": "audio/webm; codecs=\"opus\"", "bitrate": 150000, "audioQuality": "AUDIO_QUALITY_MEDIUM" },
+                { "itag": 139, "url": "aac-low", "mimeType": "audio/mp4; codecs=\"mp4a.40.5\"", "bitrate": 50000, "audioQuality": "AUDIO_QUALITY_LOW" },
+                { "itag": 140, "url": "aac", "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"", "bitrate": 130000, "audioQuality": "AUDIO_QUALITY_MEDIUM" }
+            ] }
+        }"#;
+        let sd = serde_json::from_str::<PlayerResponse>(json).unwrap().streaming_data.unwrap();
+        assert_eq!(find_format(&sd, AudioQuality::Aac).unwrap().itag, 140);
+        assert_eq!(find_format(&sd, AudioQuality::High).unwrap().itag, 251);
+        let opus_only = r#"{
+            "playabilityStatus": { "status": "OK" },
+            "streamingData": { "adaptiveFormats": [
+                { "itag": 251, "url": "opus", "mimeType": "audio/webm; codecs=\"opus\"", "bitrate": 150000, "audioQuality": "AUDIO_QUALITY_MEDIUM" }
+            ] }
+        }"#;
+        let sd = serde_json::from_str::<PlayerResponse>(opus_only).unwrap().streaming_data.unwrap();
+        assert_eq!(find_format(&sd, AudioQuality::Aac).unwrap().itag, 251);
     }
 
     /// A dubbed video lists each language at the same qualities; the higher-bitrate dub must not

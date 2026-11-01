@@ -14,6 +14,7 @@
         Share08Icon,
         BookmarkAdd02Icon,
         BookmarkCheck02Icon,
+        Download01Icon,
     } from "@hugeicons/core-free-icons";
     import TrackRow from "$lib/components/TrackRow.svelte";
     import TrackColumns, { chosen } from "$lib/components/TrackColumns.svelte";
@@ -50,6 +51,7 @@
     import { thumb } from "$lib/thumb";
     import { anchorMenu, fitMenu, NO_ANCHOR, toBody } from "$lib/menu";
     import { t } from "$lib/i18n.svelte";
+    import { downloadMany } from "$lib/downloads.svelte";
 
     let album = $state<AlbumPage | null>(null);
     let loading = $state(true);
@@ -204,6 +206,12 @@
         if (!album?.items.length) return;
         menuOpen = false;
         enqueue(album.items, next, album.title, album.continuation);
+    }
+
+    function downloadAlbum() {
+        if (!album?.items.length) return;
+        menuOpen = false;
+        downloadMany(album.items, album.title ?? t("downloads.title"));
     }
 
     function saveToPlaylist() {
@@ -378,6 +386,17 @@
                         {inLibrary ? t("library.in_library") : t("library.save_to_library")}
                     </button>
                 {/if}
+                {#if !isLocal}
+                    <button
+                        class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border text-muted-foreground transition hover:bg-accent/10 hover:text-foreground disabled:opacity-50"
+                        onclick={downloadAlbum}
+                        disabled={!album.items.length}
+                        aria-label={t("downloads.download_album")}
+                        title={t("downloads.download_album")}
+                    >
+                        <HugeiconsIcon icon={Download01Icon} class="h-5 w-5" />
+                    </button>
+                {/if}
                 <TrackSelectButton
                     {selection}
                     class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border transition hover:bg-accent/10 hover:text-foreground"
@@ -438,6 +457,17 @@
                                     icon={Radio02Icon}
                                     class="h-4 w-4"
                                 /> {t("player.start_radio")}
+                            </button>
+                        {/if}
+                        {#if !isLocal}
+                            <button
+                                class="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10"
+                                onclick={downloadAlbum}
+                            >
+                                <HugeiconsIcon
+                                    icon={Download01Icon}
+                                    class="h-4 w-4"
+                                /> {t("downloads.download_album")}
                             </button>
                         {/if}
                         <!-- A local album too: files can go in a playlist on this machine. -->

@@ -599,7 +599,7 @@ impl AppState {
         }
     }
 
-    fn quality(&self) -> AudioQuality {
+    pub(crate) fn quality(&self) -> AudioQuality {
         match self.db.get_setting("quality").as_deref() {
             Some("LOW") => AudioQuality::Low,
             Some("AUTO") => AudioQuality::Auto,
@@ -1207,6 +1207,10 @@ impl AppState {
                 ResolveError::LocalMissing(path.to_owned())
             });
         }
+        // Persistent downloads precede all stream URL caches and network resolution.
+        if let Some(saved) = crate::downloads::playback(&self.app, &self.db, video_id) {
+            return Ok(saved);
+        }
         // Latency cache first (context/11) — honor expiry, never a source of truth.
         //
         // The URL has to outlive the *track*, not just the load. googlevideo keeps serving a
@@ -1302,7 +1306,9 @@ impl AppState {
         // one offline (where local music earns its keep) is a guaranteed-failing request.
         // Autoplay off means the song plays and the queue ends there (#238): the radio hydrated
         // below is exactly the "recommended tracks" that setting turns off.
-        let no_radio = crate::local::is_local_song(&video_id) || !self.autoplay_enabled();
+        let no_radio = crate::local::is_local_song(&video_id)
+            || crate::downloads::playback(&self.app, &self.db, &video_id).is_some()
+            || !self.autoplay_enabled();
         let position = self.current_position();
 
         {
@@ -3057,6 +3063,17 @@ impl AppState {
             if q.items.len().saturating_sub(q.current) > 2 {
                 return 0; // tail not near yet
             }
+            // An explicitly chosen queue made entirely of local/downloaded songs stays offline.
+            // Manual Start radio still opts into network recommendations.
+            if !q.radio
+                && !q.items.is_empty()
+                && q.items.iter().all(|song| {
+                    crate::local::is_local_song(&song.video_id)
+                        || crate::downloads::playback(&self.app, &self.db, &song.video_id).is_some()
+                })
+            {
+                return 0;
+            }
             let Some(last) = q.items.last() else { return 0 };
             // Nothing to continue from when the queue ends on a local file: its path is not a
             // videoId, and a queue of local music is exactly the case that has to work offline.
@@ -3315,7 +3332,10 @@ impl AppState {
         // Login launches can run before Wi-Fi or DNS is ready (#483); a local file needs no
         // network. The other checks come after the wait: in that minute the user can start
         // something, join a room as a guest or turn this off.
-        if !crate::local::is_local_song(&item.video_id) && !crate::http::wait_for_network().await {
+        if !crate::local::is_local_song(&item.video_id)
+            && crate::downloads::playback(&self.app, &self.db, &item.video_id).is_none()
+            && !crate::http::wait_for_network().await
+        {
             return;
         }
         if !enabled() || !self.player.is_idle() || self.lt.is_guest().await {

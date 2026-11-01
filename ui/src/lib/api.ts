@@ -1346,3 +1346,29 @@ export const onMatugenThemeChanged = (cb: (css: string | null) => void): Promise
 	listen<string | null>('matugen-theme-changed', (event) => cb(event.payload));
 export const startMatugenWatcher = () => invoke<void>('start_matugen_watcher');
 export const stopMatugenWatcher = () => invoke<void>('stop_matugen_watcher');
+
+/** Explicit, persistent offline audio (separate from mpv's temporary packet cache). */
+export interface SavedDownload {
+	song: SongItem;
+	file: string;
+	bytes: number;
+	created_at: number;
+	loudness_db: number | null;
+	/** The same song's files in playlist folders. */
+	copies?: string[];
+}
+/** Files a playlist download's copy as `Playlists/<name>/<position> - Artist - Title`. */
+export interface PlaylistSlot { name: string; position: number; total: number }
+export interface DownloadProgress { video_id: string; received: number; total: number | null }
+export const listDownloads = () => invoke<SavedDownload[]>('list_downloads');
+export const downloadSong = (song: SongItem, playlist?: PlaylistSlot) => invoke<SavedDownload>('download_song', { song, playlist: playlist ?? null });
+export const downloadFolder = () => invoke<string>('download_folder');
+export const setDownloadFolder = (path: string) => invoke<string>('set_download_folder', { path });
+export const openDownloadFolder = () => invoke<void>('open_download_folder');
+export const removeDownload = (videoId: string) => invoke<void>('remove_download', { videoId });
+export const cancelDownload = (videoId: string) => invoke<void>('cancel_download', { videoId });
+export const exportDownload = (videoId: string, path: string) => invoke<void>('export_download', { videoId, path });
+export const onDownloadStarted = (cb: (id: string) => void) => listen<string>('download-started', e => cb(e.payload));
+export const onDownloadFinished = (cb: (id: string) => void) => listen<string>('download-finished', e => cb(e.payload));
+export const onDownloadProgress = (cb: (p: DownloadProgress) => void) => listen<DownloadProgress>('download-progress', e => cb(e.payload));
+export const onDownloadsChanged = (cb: () => void) => listen('downloads-changed', cb);

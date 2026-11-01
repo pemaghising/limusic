@@ -37,6 +37,7 @@ YouTube Music client, and grew from there.
 - **Sign in** with your YouTube Music account: in-app Google login or cookie-paste, several accounts at once with switching between them
 - **Your library**: playlists, liked songs, saved albums and artists, your uploads, and write actions (like, add to playlist, create/edit/delete playlists including cover art, subscribe, save to library)
 - **History**: everything you have played, in YouTube Music's own day buckets
+- **Offline audio**: download songs inside the app, export separate audio files, and play your own music from Library → Local. [Usage](docs/offline-downloads.md)
 - **Gapless playback** with loudness normalization, powered by libmpv
 - **Tempo, pitch and reverb**: adjust playback speed and pitch, add reverb with independent dry/wet controls, and save custom presets on this device.
 - **Queue** with radio/automix continuation, drag to reorder, restored across restarts

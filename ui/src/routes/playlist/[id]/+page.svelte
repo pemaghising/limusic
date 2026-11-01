@@ -25,7 +25,8 @@
 		ArrowUpDownIcon,
 		ComputerIcon,
 		SpotifyIcon,
-		Search01Icon
+		Search01Icon,
+		Download01Icon
 	} from '@hugeicons/core-free-icons';
 	import { Button } from '$lib/components/ui/button';
 	import * as RadioGroup from '$lib/components/ui/radio-group';
@@ -57,6 +58,7 @@
 	import { rowScroller } from '$lib/rows.svelte';
 	import { restoreTo } from '$lib/scrollrestore';
 	import { t } from '$lib/i18n.svelte';
+	import { downloadMany } from '$lib/downloads.svelte';
 	import { imp, updateFromSpotify } from '$lib/import.svelte';
 
 	import {
@@ -1024,6 +1026,16 @@
 		action();
 	}
 
+	// Every page first: a playlist folder missing its later tracks would look complete.
+	async function downloadPlaylist() {
+		const title = pl?.title ?? t('common.playlist_singular');
+		if (!(await loadAll()) || !pl) {
+			toast.error(t('toasts.could_not_load_more'));
+			return;
+		}
+		downloadMany(pl.items, title, title);
+	}
+
 	// The dialog hands over what it changed (and hands the old values back if YouTube refused it),
 	// so the page never waits on a refetch to show an edit. The sidebar/Library row follows.
 	function applyEdit(patch: {
@@ -1271,6 +1283,16 @@
 							>
 								<HugeiconsIcon icon={PlayIcon} class="h-4 w-4" />
 								{preparing || resorting ? t('common.sorting') : t('player.play')}
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								aria-label={t('downloads.download_playlist')}
+								title={t('downloads.download_playlist')}
+								onclick={() => void downloadPlaylist()}
+								disabled={!pl.items.length}
+							>
+								<HugeiconsIcon icon={Download01Icon} class="h-5 w-5 text-muted-foreground" />
 							</Button>
 							<Button
 								variant="ghost"
@@ -1542,6 +1564,13 @@
 			onclick={() => run(() => addPick(asItem()))}
 		>
 			<HugeiconsIcon icon={DashboardSquare02Icon} class="h-4 w-4" /> {t('player.add_to_shortcuts')}
+		</button>
+		<button
+			class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10 disabled:opacity-50"
+			onclick={() => run(() => void downloadPlaylist())}
+			disabled={!pl?.items.length}
+		>
+			<HugeiconsIcon icon={Download01Icon} class="h-4 w-4" /> {t('downloads.download_playlist')}
 		</button>
 		{#if !isOnRepeat && !isLocalList}
 			<button

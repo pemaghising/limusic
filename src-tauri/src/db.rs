@@ -169,6 +169,10 @@ impl Db {
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS offline_downloads (
+                video_id TEXT PRIMARY KEY,
+                metadata TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS stream_url_cache (
                 video_id    TEXT PRIMARY KEY,
                 url         TEXT NOT NULL,
@@ -432,6 +436,46 @@ impl Db {
             }
         }
         Ok(Db(Mutex::new(conn)))
+    }
+
+    pub fn offline_downloads(&self) -> Result<Vec<crate::downloads::SavedDownload>, String> {
+        let conn = self.0.lock().unwrap();
+        let mut statement = conn
+            .prepare("SELECT metadata FROM offline_downloads ORDER BY rowid DESC")
+            .map_err(|e| e.to_string())?;
+        let rows = statement.query_map([], |r| r.get::<_, String>(0)).map_err(|e| e.to_string())?;
+        rows.map(|r| {
+            serde_json::from_str(&r.map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+        })
+        .collect()
+    }
+
+    pub fn offline_download(&self, id: &str) -> Option<crate::downloads::SavedDownload> {
+        let conn = self.0.lock().unwrap();
+        let json: String = conn
+            .query_row("SELECT metadata FROM offline_downloads WHERE video_id=?1", [id], |r| {
+                r.get(0)
+            })
+            .ok()?;
+        serde_json::from_str(&json).ok()
+    }
+
+    pub fn put_offline_download(
+        &self,
+        saved: &crate::downloads::SavedDownload,
+    ) -> Result<(), String> {
+        let json = serde_json::to_string(saved).map_err(|e| e.to_string())?;
+        self.0.lock().unwrap().execute("INSERT INTO offline_downloads(video_id, metadata) VALUES(?1,?2) ON CONFLICT(video_id) DO UPDATE SET metadata=excluded.metadata", [&saved.song.video_id, &json]).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    pub fn delete_offline_download(&self, id: &str) -> Result<(), String> {
+        self.0
+            .lock()
+            .unwrap()
+            .execute("DELETE FROM offline_downloads WHERE video_id=?1", [id])
+            .map_err(|e| e.to_string())?;
+        Ok(())
     }
 
     // --- settings ---------------------------------------------------------------------------

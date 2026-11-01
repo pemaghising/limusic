@@ -8,6 +8,7 @@ mod commands;
 mod db;
 mod diagnostics;
 mod discord;
+mod downloads;
 mod hotkeys;
 mod http;
 mod import;
@@ -18,9 +19,11 @@ mod listenbrainz;
 mod listentogether;
 mod local;
 mod lyrics;
+mod m4a;
 mod matugen;
 mod media;
 mod mini;
+mod musicbrainz;
 #[cfg(target_os = "linux")]
 mod nativevideo;
 #[cfg(windows)]
@@ -875,6 +878,7 @@ pub fn run() {
             // Local music artwork reaches the webview over the asset protocol, whose configured
             // scope is empty — the folders it may read are the ones the user picked (local.rs).
             local::allow_music_paths(&handle, &app_state.db);
+            downloads::allow_paths(&handle);
 
             // The login entry runs whichever binary last wrote it. A dev build that wrote it leaves
             // the login launch loading the vite server, which isn't running then: tray icon, no
@@ -1186,6 +1190,14 @@ pub fn run() {
             commands::get_blocked_artists,
             commands::block_artist,
             commands::unblock_artist,
+            downloads::cancel_download,
+            downloads::list_downloads,
+            downloads::download_song,
+            downloads::remove_download,
+            downloads::export_download,
+            downloads::download_folder,
+            downloads::set_download_folder,
+            downloads::open_download_folder,
             commands::get_local_library,
             commands::add_local_folder,
             commands::remove_local_folder,

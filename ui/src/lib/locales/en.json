@@ -1367,5 +1367,37 @@
 			"not_found": "Couldn’t find that on YouTube Music.",
 			"cooldown": "YouTube Music asked Limusic to slow down, so imports are paused until {time}. Everything found so far is saved."
 		}
+	},
+	"downloads": {
+		"title": "Downloads",
+		"download": "Download for offline",
+		"export": "Export audio file…",
+		"audio_file": "Audio file",
+		"remove": "Remove download",
+		"saved": "Available offline",
+		"removed": "Download removed",
+		"exported": "Audio file exported",
+		"busy": "Another song is still downloading. Wait for it to finish or cancel it in Library → Downloads.",
+		"downloading": "Downloading…",
+		"loading": "Loading downloads…",
+		"empty": "No downloads yet",
+		"empty_hint": "Open a song’s ⋯ menu and choose Download for offline. Your saved songs will appear here.",
+		"summary": "{count} songs · {size}",
+		"play_all": "Play all",
+		"search": "Search downloaded songs",
+		"offline_hint": "These songs play from this device. They are saved in your download folder as M4A files that Apple Music can open, filed under Albums/Album Artist/Album and Playlists/Playlist name, with title, artist, album, year, track number, cover art and lyrics.",
+		"more": "Show more",
+		"no_matches": "No downloaded songs match your search.",
+		"download_album": "Download album",
+		"download_playlist": "Download playlist",
+		"queued": "Downloading {count} songs from {label}",
+		"batch_progress": "{label}: song {done} of {count}",
+		"batch_done": "{label}: {count} songs downloaded",
+		"batch_failed": "{label}: {failed} of {count} songs could not be downloaded",
+		"folder": "Download folder",
+		"open_folder": "Open folder",
+		"change_folder": "Change…",
+		"choose_folder": "Choose a download folder",
+		"folder_changed": "New downloads will be saved in this folder"
 	}
 }

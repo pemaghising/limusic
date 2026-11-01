@@ -33,9 +33,9 @@ const SCAN_VERSION_SETTING: &str = "local_scan_version";
 
 /// Extensions we pick up. Playback itself is mpv, which decodes far more than this — the list is
 /// only about what a music folder plausibly holds, so a scan doesn't try to probe every stray file.
-const AUDIO_EXT: [&str; 15] = [
+const AUDIO_EXT: [&str; 16] = [
     "mp3", "flac", "m4a", "m4b", "aac", "ogg", "oga", "opus", "wav", "wma", "aiff", "aif", "ape",
-    "wv", "mka",
+    "wv", "mka", "webm",
 ];
 /// Cover images sitting next to the tracks, in preference order (used when nothing is embedded).
 const COVER_FILES: [&str; 6] =

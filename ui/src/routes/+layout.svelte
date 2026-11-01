@@ -59,6 +59,7 @@
 	import { initZoom } from '$lib/zoom.svelte';
 	import { initShortcuts } from '$lib/shortcuts';
 	import { initErrorLog } from '$lib/errlog';
+	import { initDownloads } from '$lib/downloads.svelte';
 	import {
 		updateState,
 		availableMessage,
@@ -163,11 +164,13 @@
 	onMount(() => {
 		// Before the mini-window bail-out: both windows run this SPA and both can throw.
 		initErrorLog();
+		const teardownDownloads = initDownloads();
 		if (isMini) {
 			// The widget gets the transport keys too. No zoom: it is a fixed-size card.
 			const teardownMiniApp = initApp(true);
 			const teardownMiniKeys = initShortcuts(true);
 			return () => {
+				teardownDownloads();
 				teardownMiniApp();
 				teardownMiniKeys();
 			};
@@ -184,6 +187,7 @@
 		initImport();
 		return () => {
 			clearInterval(updateTimer);
+			teardownDownloads();
 			teardownApp();
 			teardownWin();
 			teardownZoom();

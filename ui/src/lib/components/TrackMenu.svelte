@@ -25,6 +25,9 @@
 		DashboardSquare02Icon,
 		Share08Icon,
 		PreferenceVerticalIcon,
+		Download01Icon,
+		Delete02Icon,
+		FolderExportIcon,
 		PencilEdit02Icon
 	} from '@hugeicons/core-free-icons';
 	import * as api from '$lib/api';
@@ -53,6 +56,7 @@
 		toggleSongLibrary,
 		ui
 	} from '$lib/player.svelte';
+	import { downloads, savedDownload, saveOffline, exportAudio, forgetDownload, cancelCurrentDownload, refreshDownloads } from '$lib/downloads.svelte';
 	import { lastfm } from '$lib/lastfm.svelte';
 	import { listenbrainz } from '$lib/listenbrainz.svelte';
 	import { lt } from '$lib/lt.svelte';
@@ -112,6 +116,7 @@
 		e.stopPropagation();
 		anchor = anchorMenu(e, { align: 'right' });
 		menuOpen = true;
+		void refreshDownloads();
 	}
 	// stopPropagation everywhere: the trigger sits inside a clickable row (TrackRow's whole row is a
 	// play target), so its click must not reach the row's onplay (e.g. replacing the queue with the
@@ -139,6 +144,7 @@
 	// A local file has no YouTube identity: liking it or sharing it is not a thing, so those items
 	// don't show. Queue, shortcuts, go-to-album and saving it to a playlist on this machine work.
 	const isLocal = $derived(api.isLocalId(song.video_id));
+	const downloaded = $derived(savedDownload(song.video_id));
 	// "Remove from this playlist", for a row playing out of a playlist (issue #270). What the three
 	// conditions are and why is in `removableFromPlaylist` (queue.ts), where they are checkable.
 	const removable = $derived(removableFromPlaylist(song, playlistId, savedIn.map));
@@ -239,6 +245,40 @@
 		{@attach toBody}
 		{@attach fitMenu(anchor)}
 	>
+		{#if !isLocal}
+			{#if downloads.busy === song.video_id}
+				<button
+					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10"
+					onclick={(e) => run(e, cancelCurrentDownload)}
+				>
+					<HugeiconsIcon icon={Download01Icon} class="h-4 w-4" />
+					{t('common.cancel')} · {t('downloads.downloading')}
+				</button>
+			{:else if downloaded}
+				<button
+					disabled={!!downloads.busy}
+					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10 disabled:opacity-50"
+					onclick={(e) => run(e, () => forgetDownload(song.video_id))}
+				>
+					<HugeiconsIcon icon={Delete02Icon} class="h-4 w-4" /> {t('downloads.remove')}
+				</button>
+			{:else}
+				<button
+					disabled={!!downloads.busy}
+					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10 disabled:opacity-50"
+					onclick={(e) => run(e, () => saveOffline(song))}
+				>
+					<HugeiconsIcon icon={Download01Icon} class="h-4 w-4" /> {t('downloads.download')}
+				</button>
+			{/if}
+			<button
+				disabled={!!downloads.exporting || (!!downloads.busy && !downloaded)}
+				class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10 disabled:opacity-50"
+				onclick={(e) => run(e, () => exportAudio(song))}
+			>
+				<HugeiconsIcon icon={FolderExportIcon} class="h-4 w-4" /> {t('downloads.export')}
+			</button>
+		{/if}
 		{#if !linksOnly}
 			<button
 				class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent/10"
